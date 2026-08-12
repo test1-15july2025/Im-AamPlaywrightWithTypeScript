@@ -78,6 +78,7 @@ export class ImAamFunctionLibrary {
     await this.page.waitForLoadState('load');
     await this.page.getByText('Login').waitFor({ state: 'visible' });
     await this.page.getByText('Login').click();
+    await this.page.waitForLoadState('load');
     await this.page.getByPlaceholder('Enter your username or email').fill(userName);
     await this.page.getByPlaceholder('Enter Password').fill(password);
     await this.page.locator("button:has-text('Login')").click();
@@ -85,20 +86,30 @@ export class ImAamFunctionLibrary {
   }
 
   async navigateToBaseUrl() {
+    console.log(`Navigating to base URL: ${this.url}`);
     for (let i = 0; i < 10; i++) {
       try {
-        await this.page.goto(this.url, { waitUntil: 'domcontentloaded' });
-        await this.page.waitForLoadState('load');
+        try{
+          await this.page.goto(this.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        }catch (error) {
+          await this.page.keyboard.press('Escape');
+          await this.page.keyboard.press('F5');
+          // await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
+        }
+        await this.page.waitForLoadState('load', { timeout: 60000 });
         if (await this.page.locator("[class*='page_landingContainer']").count() > 0) {
+          console.log(`Navigation succeeded on attempt ${i + 1}`);
           break;
         } else {
-          await this.page.reload({ waitUntil: 'domcontentloaded' });
+          console.log(`Landing container not found on attempt ${i + 1}, reloading...`);
+          await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
         }
       } catch (error) {
+        console.error(`Navigation attempt ${i + 1} failed:`, error);
         if (this.page.isClosed()) {
           throw new Error(`Page closed while retrying navigation: ${error}`);
         }
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 4000));
         await this.page.keyboard.press('Control+F5');
       }
     }

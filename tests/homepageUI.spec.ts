@@ -4,6 +4,7 @@ import { ImAamFunctionLibrary } from '../lib/ImAamFunctionLibrary';
 import { CommonFunctionLibrary } from '../lib/CommonFunctionLibrary';
 
 test.describe.configure({ mode: 'serial' }); // Run tests in this block sequentially
+test.setTimeout(180000);
 
 let browser: Browser;
 let context: BrowserContext;
@@ -27,6 +28,7 @@ test.beforeAll('Launch browser', async () => {
   browser = await browserType.launch({
     headless: false,
     args: ['--start-maximized'],
+    timeout: 120000,
   });
   context = await browser.newContext({
     viewport: null,
@@ -43,11 +45,12 @@ test.beforeAll('Launch browser', async () => {
   iafl = new ImAamFunctionLibrary(page);
   cfl = new CommonFunctionLibrary(page);
   await iafl.configTestFlow();
-  // await page.goto('https://staging.im-aam.com/');
+  if (!iafl.url) {
+    throw new Error('Base URL was not loaded from test data. Check test-data/testData.xlsx and the Environment URL column.');
+  }
   console.log('URL from Excel:', iafl.url);
-  // await page.goto(iafl.url);
   await iafl.navigateToBaseUrl();
-  await page.waitForLoadState('load'); 
+  await page.waitForLoadState('load', { timeout: 60000 });
   // await page.goto('https://staging.im-aam.com/');
   // Perform any necessary setup actions here, such as logging in or preparing test data.
   // await browser.close();  
