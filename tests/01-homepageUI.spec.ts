@@ -85,7 +85,8 @@ test('Home page has expected UI elements', async ({ }, testInfo) => {
   await expect.soft(page.locator("img[src='/logo.png']")).toBeVisible();
   await expect.soft(page.locator("h1:has-text('The Investment Manager Powered by an Artificial Machine')")).toBeVisible();
   await expect.soft(page.locator("img[src='/assets/landing/landing.png']")).toBeVisible();
-  await expect.soft(page.getByText('Identify the best opportunities in the share market today using AI-powered stock insights')).toBeVisible();
+  // await expect.soft(page.getByText('Identify the best opportunities in the share market today using AI-powered stock insights')).toBeVisible();
+  await expect.soft(page.getByText('Discover the best US stocks to buy now with AI-powered stock market analysis, stock recommendations, and real-time market insights.')).toBeVisible();
   await expect.soft(page.locator("button:has-text('Login')")).toBeVisible();
   await expect.soft(page.locator("button:has-text('Register')")).toBeVisible();
   await expect.soft(page.locator("p:has-text('Continue As Guest')")).toBeVisible();
