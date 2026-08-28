@@ -11,7 +11,7 @@ export class ImAamFunctionLibrary {
     this.page = page;
   }
   // public url: string;
-  url: string = '';
+  envUrl: string = '';
   filePath: string = 'test-data/testData.xlsx';
 
   async configTestFlow() {
@@ -29,7 +29,7 @@ export class ImAamFunctionLibrary {
     //     throw new Error("Cell A1 in worksheet 'testFlow' does not contain a valid URL.");
     // }
 
-    this.url = await this.getFirstRowValueByHeader('testFlow', 'Environment URL');
+    this.envUrl = await this.getFirstRowValueByHeader('testFlow', 'Environment URL');
 
 
     // console.log('URL from Excel:', this.url);
@@ -86,12 +86,12 @@ export class ImAamFunctionLibrary {
   }
 
   async navigateToBaseUrl() {
-    console.log(`Navigating to base URL: ${this.url}`);
+    console.log(`Navigating to base URL: ${this.envUrl}`);
     for (let i = 0; i < 10; i++) {
       try {
-        try{
-          await this.page.goto(this.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-        }catch (error) {
+        try {
+          await this.page.goto(this.envUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        } catch (error) {
           await this.page.keyboard.press('Escape');
           await this.page.keyboard.press('F5');
           // await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
@@ -104,6 +104,39 @@ export class ImAamFunctionLibrary {
           console.log(`Landing container not found on attempt ${i + 1}, reloading...`);
           await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
         }
+      } catch (error) {
+        console.error(`Navigation attempt ${i + 1} failed:`, error);
+        if (this.page.isClosed()) {
+          throw new Error(`Page closed while retrying navigation: ${error}`);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 4000));
+        await this.page.keyboard.press('Control+F5');
+      }
+    }
+  }
+
+
+  async navigateToUrl(url: string) {
+    console.log(`Navigating to URL: ${url}`);
+    for (let i = 0; i < 10; i++) {
+      try {
+        try {
+          await this.page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        } catch (error) {
+          await this.page.keyboard.press('Escape');
+          await this.page.keyboard.press('F5');
+          // await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
+        }
+        await this.page.waitForLoadState('load', { timeout: 60000 });
+
+        // if (await this.page.locator(".neterror").count() === 0) {
+        //   console.log(`Navigation succeeded on attempt ${i + 1}`);
+        //   break;
+        // } else {
+        //   console.log(`Network error found on attempt ${i + 1}, reloading...`);
+        //   await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
+        // }
+
       } catch (error) {
         console.error(`Navigation attempt ${i + 1} failed:`, error);
         if (this.page.isClosed()) {

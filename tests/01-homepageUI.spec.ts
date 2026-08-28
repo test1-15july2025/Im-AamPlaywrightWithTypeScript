@@ -45,10 +45,10 @@ test.beforeAll('Launch browser', async () => {
   iafl = new ImAamFunctionLibrary(page);
   cfl = new CommonFunctionLibrary(page);
   await iafl.configTestFlow();
-  if (!iafl.url) {
+  if (!iafl.envUrl) {
     throw new Error('Base URL was not loaded from test data. Check test-data/testData.xlsx and the Environment URL column.');
   }
-  console.log('URL from Excel:', iafl.url);
+  console.log('URL from Excel:', iafl.envUrl);
   await iafl.navigateToBaseUrl();
   await page.waitForLoadState('load', { timeout: 60000 });
   // await page.goto('https://staging.im-aam.com/');
@@ -72,7 +72,8 @@ test('has title', async () => {
   // await expect(page).toHaveTitle(/Im-Aam/);
   // await expect(page).toHaveTitle(/AI Picks/);
   // await expect(page).toHaveTitle('Best Stock Analysis App (AI Picks & Market Research)');
-  await expect(page).toHaveTitle('Best Stock Analysis App | AI Stock Picks & Real-Time Market Research');
+  // await expect(page).toHaveTitle('Best Stock Analysis App | AI Stock Picks & Real-Time Market Research');
+  await expect(page).toHaveTitle('US Stocks | Best Stocks to Buy | Top Stock Research | IM-AAM');
   // await page.waitForFunction(() => document.title.includes('Best Stock Analysis App (AI Picks & Market Research)'));
 });
 
