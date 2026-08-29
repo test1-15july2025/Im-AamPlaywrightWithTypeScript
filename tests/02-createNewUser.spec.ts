@@ -316,8 +316,10 @@ test('Verify user activation functionality is working fine', async ({ }, testInf
 
   expect.soft(msgTextAfterAccountActivation.trim()).toBe('Verifying your email...');
 
+  try{
+    await newPageInNewTab.waitForTimeout(8000); // Wait for 8 seconds
+  }catch{}
   await newPageInNewTab.waitForLoadState('load');
-  await newPageInNewTab.waitForTimeout(8000);
 
   msgTextAfterAccountActivation = await newPageInNewTab.locator("div[class*='auth_localPadding']").innerText() || '';
   console.log('Message text after few seconds of clicking on account activation link:', msgTextAfterAccountActivation);
