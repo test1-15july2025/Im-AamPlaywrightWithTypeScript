@@ -1,5 +1,5 @@
 import { test, expect, Browser, BrowserContext, Page, chromium, firefox, webkit, type TestInfo } from '@playwright/test';
-import { appendFile, mkdir, writeFile } from 'fs/promises';
+import { appendFile, mkdir, readFile } from 'fs/promises';
 import { resolve } from 'path';
 // import { test, expect, Browser, BrowserContext, Page } from '@playwright/test';
 // import { WebActions } from '../lib/webActions';
@@ -22,47 +22,6 @@ let msgText: string;
 let userID: string;
 let password: string;
 let emailAddress: string;
-
-async function captureAllOpenPagesOnFailure(testInfo: TestInfo, browserInstance: Browser | undefined) {
-  if (!browserInstance || testInfo.status !== 'failed') {
-    return;
-  }
-
-  const screenshotsDir = resolve(__dirname, '..', 'test-results', 'failure-screenshots');
-  await mkdir(screenshotsDir, { recursive: true });
-
-  const contexts = browserInstance.contexts();
-  for (const [contextIndex, contextInstance] of contexts.entries()) {
-    const pages = contextInstance.pages();
-    for (const [pageIndex, openPage] of pages.entries()) {
-      const pageName = (openPage.url() || 'about:blank')
-        .replace(/^https?:\/\//, '')
-        .replace(/[^a-zA-Z0-9._-]+/g, '_')
-        .replace(/^_+|_+$/g, '') || 'blank';
-      const screenshotPath = resolve(screenshotsDir, `page_${contextIndex + 1}_${pageIndex + 1}_${pageName}.png`);
-
-      await openPage.screenshot({ path: screenshotPath, fullPage: true });
-      await testInfo.attach(`all-open-pages-${contextIndex + 1}-${pageIndex + 1}`, {
-        path: screenshotPath,
-        contentType: 'image/png',
-      });
-    }
-  }
-}
-
-async function appendUserNameToTextFile(name: string) {
-  let notepadFilePath;
-  console.log('URL from Excel(in append username function):', (iafl.envUrl));
-  // if ((iafl.envUrl.toString()).toLowerCase().includes("staging")) {
-  if ((iafl.envUrl).includes("staging")) {
-    notepadFilePath = resolve(__dirname, '..', 'StagingUsers.txt');
-  } else {
-    notepadFilePath = resolve(__dirname, '..', 'LiveUsers.txt');
-  }
-  await appendFile(notepadFilePath, `\n${name}`, 'utf8');
-}
-
-
 
 // export class HomePageUItest {
 // constructor(page: Page) {
@@ -103,10 +62,6 @@ test.beforeAll('Launch browser', async () => {
   // await browser.close();  
 });
 
-test.afterEach(async ({}, testInfo) => {
-  await captureAllOpenPagesOnFailure(testInfo, browser);
-});
-
 test.afterAll(async () => {
   console.log('Teardown: Cleaning up environment...');
   await page.close();
@@ -115,21 +70,56 @@ test.afterAll(async () => {
   await browser.close();
 });
 
-test('has title', async () => {
-  // test('has title', async ({ page }) => {
-  // await page.goto('https://staging.im-aam.com/');
+// test('has title', async () => {
+//   // test('has title', async ({ page }) => {
+//   // await page.goto('https://staging.im-aam.com/');
 
-  // Expect a title "to contain" a substring.
-  // await expect(page).toHaveTitle(/Im-Aam/);
+//   // Expect a title "to contain" a substring.
+//   // await expect(page).toHaveTitle(/Im-Aam/);
+//   await page.waitForLoadState('load');
+//   await page.waitForFunction(() => document.title.includes('Best Stocks to Buy'));
+//   // await page.waitForFunction(() => document.title.includes('AI Stock Picks') || document.title.includes('Best Stocks to Buy'));
+// });
+
+test('Verify that making deposit of $10 increasing balance $60 in first deposit within 5 minutes', async ({ }, testInfo) => {
+
+  // Try to read the last created user's details so we can use the email for login
+  try {
+    const data = await readFile(resolve(__dirname, '..', 'lastCreatedUser.json'), 'utf8');
+    const last = JSON.parse(data);
+    if (last?.emailAddress) emailAddress = last.emailAddress;
+    if (last?.userID) userID = last.userID;
+    if (last?.password) password = last.password;
+    console.log('Loaded lastCreatedUser.json:', { userID, emailAddress });
+  } catch (err: any) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn('Could not read lastCreatedUser.json, falling back to generated values:', msg);
+  }
+
+  iafl.logIn(emailAddress, password);
+
+  await page.click("a:has-text('Claim Now')");
   await page.waitForLoadState('load');
-  await page.waitForFunction(() => document.title.includes('Best Stocks to Buy'));
-  // await page.waitForFunction(() => document.title.includes('AI Stock Picks') || document.title.includes('Best Stocks to Buy'));
-});
 
-test('Verify add user functionality is working fine', async ({ }, testInfo) => {
+  await page.fill("div[class^='input_inputContainer']>input", "10");
+
+  await page.locator("button:has-text('Deposit')").scrollIntoViewIfNeeded();
+  await page.locator("button:has-text('Deposit')").click();
+  await page.waitForLoadState('load');
+
+  await page.locator("button:has-text('Confirm Deposit')").scrollIntoViewIfNeeded();
+  await page.locator("button:has-text('Confirm Deposit')").click();
+  await page.waitForLoadState('load');
+
+
+
+  ///////////============================================
+
+
+
   let phoneNumber: string;
 
-  userID = 'test'+cfl.getTimestampManual();
+  userID = 'test' + cfl.getTimestampManual();
   emailAddress = userID + '@yopmail.com';
   password = "Test@123";
   let randomNineDigitNumber = Math.floor(100000000 + Math.random() * 900000000).toString();
@@ -155,7 +145,7 @@ test('Verify add user functionality is working fine', async ({ }, testInfo) => {
   await page.waitForTimeout(1000); // Wait for 1 second to ensure the checkbox state is updated
   await page.locator("//input[@type='checkbox']").check();
   await page.waitForLoadState('load');
-  
+
   await page.locator("//button[contains(text(),'Register')]").scrollIntoViewIfNeeded();
   await page.click("//button[contains(text(),'Register')]");
   await page.waitForLoadState('load');
@@ -163,30 +153,7 @@ test('Verify add user functionality is working fine', async ({ }, testInfo) => {
   msgText = await page.locator("div[class*='auth_localPadding']").innerText() || '';
   console.log('Message Text:', msgText);
 
-  try {
-    if (await page.locator("text=✅ Registration successful! Please check your email to verify your account.").isVisible()) {
-      console.log('Successful registration message is visible.');
-      userName = userID;
-      console.log('Username of created user:', userName);
-      await appendUserNameToTextFile(userName);
-        try {
-          await writeFile(resolve(__dirname, '..', 'lastCreatedUser.json'), JSON.stringify({ userID, emailAddress, password }), 'utf8');
-          console.log('Saved lastCreatedUser.json with created user info.');
-        } catch (err) {
-          console.warn('Failed to save lastCreatedUser.json:', err);
-        }
-      await page.getByText('Back').click();
-    } else
-      console.log('Successful registration message is NOT visible.');
-  } catch (error) {
-    console.log('Successful registration message is NOT found.');
-    if (error instanceof Error) {
-      console.log("Error: " + error.message);
-    }
-    console.error('Error while checking registration success message:', error);
-  }
-
-  iafl.logIn(userID, "TotallyWrongPassword");
+  iafl.logIn(emailAddress, "TotallyWrongPassword");
   msgText = await page.locator("span[class*='auth_formError']").innerText() || '';
   console.log('Error message text for wrong password before activation: ', msgText);
   expect.soft(msgText.trim()).toBe('Account is not verified. Please verify your email first.');
@@ -281,7 +248,7 @@ test('Verify user activation functionality is working fine', async ({ }, testInf
   await yopmailPage.locator("#login").press('Enter');
   await yopmailPage.waitForLoadState('load');
   // await yopmailPage.frameLocator("#ifinbox").locator("div:has-text('Im-Aam')").first().click();
-  
+
   for (let i = 0; i < 10; i++) {
     try {
       if (await yopmailPage.locator("//div[contains(text(),'This inbox is empty')]").count() > 0) {
@@ -308,7 +275,7 @@ test('Verify user activation functionality is working fine', async ({ }, testInf
   [newPageInNewTab] = await Promise.all([
     yopmailPage.waitForEvent('popup'),
     yopmailPage.frameLocator("iframe[name='ifmail']").getByText("Activate Account").click(),
-    
+
   ]);
 
   iafl2 = new ImAamFunctionLibrary(newPageInNewTab);
@@ -322,9 +289,9 @@ test('Verify user activation functionality is working fine', async ({ }, testInf
 
   expect.soft(msgTextAfterAccountActivation.trim()).toBe('Verifying your email...');
 
-  try{
+  try {
     await newPageInNewTab.waitForTimeout(8000); // Wait for 8 seconds
-  }catch{}
+  } catch { }
   await newPageInNewTab.waitForLoadState('load');
 
   msgTextAfterAccountActivation = await newPageInNewTab.locator("div[class*='auth_localPadding']").innerText() || '';

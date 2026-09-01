@@ -2,6 +2,7 @@ import { test, expect, Browser, BrowserContext, Page, chromium, firefox, webkit 
 // import { test, expect, Browser, BrowserContext, Page } from '@playwright/test';
 import { ImAamFunctionLibrary } from '../lib/ImAamFunctionLibrary';
 import { CommonFunctionLibrary } from '../lib/CommonFunctionLibrary';
+import { link } from 'fs';
 
 test.describe.configure({ mode: 'serial' }); // Run tests in this block sequentially
 test.setTimeout(180000);
@@ -12,12 +13,6 @@ let page: Page;
 
 let iafl: ImAamFunctionLibrary;
 let cfl: CommonFunctionLibrary;
-
-
-// export class HomePageUItest {
-// constructor(page: Page) {
-//   this.page = page;
-// }
 
 // Get browser type from environment or default to chromium
 const browserType = process.env.BROWSER_TYPE === 'firefox' ? firefox : process.env.BROWSER_TYPE === 'webkit' ? webkit : chromium;
@@ -98,7 +93,40 @@ test('Verify that correct free trial pop-up is there for the guest user', async 
   } else {
     console.log('Test passed without errors.');
   }
-
-
 });
-// }
+
+test("Verify that no table cell contains 'N/A' in position trader table", async ({ }, testInfo) => {
+  await expect(page.locator("div[class^='porfolioTable_tableContainer'] td")).not.toContainText('N/A');
+
+  if (testInfo.errors.length > 0) {
+    console.error('Test failed with errors:', testInfo.errors);
+  } else {
+    console.log('Test passed without errors.');
+  }
+});
+
+test("Verify that no table cell contains 'N/A' in swing trader table", async ({ }, testInfo) => {
+  page.click("a:has-text('Swing Trader')");
+  page.waitForLoadState('load', { timeout: 60000 });
+
+  await expect(page.locator("div[class^='porfolioTable_tableContainer'] td")).not.toContainText('N/A');
+
+  if (testInfo.errors.length > 0) {
+    console.error('Test failed with errors:', testInfo.errors);
+  } else {
+    console.log('Test passed without errors.');
+  }
+});
+
+test("Verify that no table cell contains 'N/A' in daily trader table", async ({ }, testInfo) => {
+  page.click("a:has-text('Daily Trader')");
+  page.waitForLoadState('load', { timeout: 60000 });
+
+  await expect(page.locator("div[class^='porfolioTable_tableContainer'] td")).not.toContainText('N/A');
+
+  if (testInfo.errors.length > 0) {
+    console.error('Test failed with errors:', testInfo.errors);
+  } else {
+    console.log('Test passed without errors.');
+  }
+});
