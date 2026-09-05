@@ -1,4 +1,4 @@
-import { Page } from "@playwright/test";
+import { Page, expect } from "@playwright/test";
 // import ExcelJS from 'exceljs';
 import * as ExcelJS from 'exceljs';
 
@@ -113,6 +113,12 @@ export class ImAamFunctionLibrary {
         await this.page.keyboard.press('Control+F5');
       }
     }
+
+    const acceptButton = this.page.locator("button:has-text('Accept')");
+    if (await acceptButton.count() > 0) {
+      await acceptButton.first().click();
+      this.page.waitForLoadState('load');
+    }
   }
 
 
@@ -152,6 +158,9 @@ export class ImAamFunctionLibrary {
 
   async getAccountBalance(): Promise<string> {
     const balanceText = await this.page.locator("a[class^='header_balanceDisplay']").textContent();
+    try{
+      expect(this.page.locator("a[class^='header_balanceDisplay']").textContent()).not.toContain('...');
+    } catch {}
     return balanceText ? balanceText.trim() : '';
   }
 

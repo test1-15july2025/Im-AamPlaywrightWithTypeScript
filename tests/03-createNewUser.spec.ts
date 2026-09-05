@@ -103,7 +103,7 @@ test.beforeAll('Launch browser', async () => {
   // await browser.close();  
 });
 
-test.afterEach(async ({}, testInfo) => {
+test.afterEach(async ({ }, testInfo) => {
   await captureAllOpenPagesOnFailure(testInfo, browser);
 });
 
@@ -129,7 +129,7 @@ test('has title', async () => {
 test('Verify add user functionality is working fine', async ({ }, testInfo) => {
   let phoneNumber: string;
 
-  userID = 'test'+cfl.getTimestampManual();
+  userID = 'test' + cfl.getTimestampManual();
   emailAddress = userID + '@yopmail.com';
   password = "Test@123";
   let randomNineDigitNumber = Math.floor(100000000 + Math.random() * 900000000).toString();
@@ -155,7 +155,7 @@ test('Verify add user functionality is working fine', async ({ }, testInfo) => {
   await page.waitForTimeout(1000); // Wait for 1 second to ensure the checkbox state is updated
   await page.locator("//input[@type='checkbox']").check();
   await page.waitForLoadState('load');
-  
+
   await page.locator("//button[contains(text(),'Register')]").scrollIntoViewIfNeeded();
   await page.click("//button[contains(text(),'Register')]");
   await page.waitForLoadState('load');
@@ -169,12 +169,12 @@ test('Verify add user functionality is working fine', async ({ }, testInfo) => {
       userName = userID;
       console.log('Username of created user:', userName);
       await appendUserNameToTextFile(userName);
-        try {
-          await writeFile(resolve(__dirname, '..', 'lastCreatedUser.json'), JSON.stringify({ userID, emailAddress, password }), 'utf8');
-          console.log('Saved lastCreatedUser.json with created user info.');
-        } catch (err) {
-          console.warn('Failed to save lastCreatedUser.json:', err);
-        }
+      try {
+        await writeFile(resolve(__dirname, '..', 'lastCreatedUser.json'), JSON.stringify({ userID, emailAddress, password }), 'utf8');
+        console.log('Saved lastCreatedUser.json with created user info.');
+      } catch (err) {
+        console.warn('Failed to save lastCreatedUser.json:', err);
+      }
       await page.getByText('Back').click();
     } else
       console.log('Successful registration message is NOT visible.');
@@ -281,7 +281,7 @@ test('Verify user activation functionality is working fine', async ({ }, testInf
   await yopmailPage.locator("#login").press('Enter');
   await yopmailPage.waitForLoadState('load');
   // await yopmailPage.frameLocator("#ifinbox").locator("div:has-text('Im-Aam')").first().click();
-  
+
   for (let i = 0; i < 10; i++) {
     try {
       if (await yopmailPage.locator("//div[contains(text(),'This inbox is empty')]").count() > 0) {
@@ -308,7 +308,7 @@ test('Verify user activation functionality is working fine', async ({ }, testInf
   [newPageInNewTab] = await Promise.all([
     yopmailPage.waitForEvent('popup'),
     yopmailPage.frameLocator("iframe[name='ifmail']").getByText("Activate Account").click(),
-    
+
   ]);
 
   iafl2 = new ImAamFunctionLibrary(newPageInNewTab);
@@ -322,10 +322,16 @@ test('Verify user activation functionality is working fine', async ({ }, testInf
 
   expect.soft(msgTextAfterAccountActivation.trim()).toBe('Verifying your email...');
 
-  try{
+  try {
     await newPageInNewTab.waitForTimeout(8000); // Wait for 8 seconds
-  }catch{}
+  } catch { }
   await newPageInNewTab.waitForLoadState('load');
+
+  const acceptButton = newPageInNewTab.locator("button:has-text('Accept')");
+  if (await acceptButton.count() > 0) {
+    await acceptButton.first().click();
+    await newPageInNewTab.waitForLoadState('load');
+  }
 
   msgTextAfterAccountActivation = await newPageInNewTab.locator("div[class*='auth_localPadding']").innerText() || '';
   console.log('Message text after few seconds of clicking on account activation link:', msgTextAfterAccountActivation);

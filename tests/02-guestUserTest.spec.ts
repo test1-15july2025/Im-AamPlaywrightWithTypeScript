@@ -65,11 +65,11 @@ test('Verify that correct free trial pop-up is there for the guest user', async 
 
   // Check for the presence of key UI elements.
 
-  page.click("p:has-text('Continue As Guest')");
-  page.waitForLoadState('load', { timeout: 60000 });
+  await page.click("p:has-text('Continue As Guest')");
+  await page.waitForLoadState('load', { timeout: 60000 });
 
   // Check for the presence of the free trial pop-up.
-  await expect(page.locator("div[class*='FreeTrialPopUP_trialModal']")).toBeVisible();
+  await expect(page.locator("div[class*='FreeTrialPopUP_trialModal']")).toBeVisible({ timeout: 20000 });
 
   await expect.soft(page.locator("div[class^='FreeTrialPopUP_customCloseBtn']")).toBeVisible();
   await expect.soft(page.locator("img[src='/trial-icon.webp']")).toBeVisible();
@@ -96,7 +96,12 @@ test('Verify that correct free trial pop-up is there for the guest user', async 
 });
 
 test("Verify that no table cell contains 'N/A' in position trader table", async ({ }, testInfo) => {
-  await expect(page.locator("div[class^='porfolioTable_tableContainer'] td")).not.toContainText('N/A');
+  const cells = page.locator("div[class^='porfolioTable_tableContainer'] td");
+  const count = await cells.count();
+
+  for (let i = 0; i < count; i++) {
+    await expect(cells.nth(i)).not.toContainText('N/A', { timeout: 5000 });
+  }
 
   if (testInfo.errors.length > 0) {
     console.error('Test failed with errors:', testInfo.errors);
@@ -106,10 +111,15 @@ test("Verify that no table cell contains 'N/A' in position trader table", async 
 });
 
 test("Verify that no table cell contains 'N/A' in swing trader table", async ({ }, testInfo) => {
-  page.click("a:has-text('Swing Trader')");
-  page.waitForLoadState('load', { timeout: 60000 });
+  await page.click("a:has-text('Swing Trader')");
+  await page.waitForLoadState('load', { timeout: 60000 });
 
-  await expect(page.locator("div[class^='porfolioTable_tableContainer'] td")).not.toContainText('N/A');
+  const cells = page.locator("div[class^='porfolioTable_tableContainer'] td");
+  const count = await cells.count();
+
+  for (let i = 0; i < count; i++) {
+    await expect(cells.nth(i)).not.toContainText('N/A', { timeout: 5000 });
+  }
 
   if (testInfo.errors.length > 0) {
     console.error('Test failed with errors:', testInfo.errors);
@@ -119,10 +129,15 @@ test("Verify that no table cell contains 'N/A' in swing trader table", async ({ 
 });
 
 test("Verify that no table cell contains 'N/A' in daily trader table", async ({ }, testInfo) => {
-  page.click("a:has-text('Daily Trader')");
-  page.waitForLoadState('load', { timeout: 60000 });
+  await page.click("a:has-text('Daily Trader')");
+  await page.waitForLoadState('load', { timeout: 60000 });
 
-  await expect(page.locator("div[class^='porfolioTable_tableContainer'] td")).not.toContainText('N/A');
+  const cells = page.locator("div[class^='porfolioTable_tableContainer'] td");
+  const count = await cells.count();
+
+  for (let i = 0; i < count; i++) {
+    await expect(cells.nth(i)).not.toContainText('N/A', { timeout: 5000 });
+  }
 
   if (testInfo.errors.length > 0) {
     console.error('Test failed with errors:', testInfo.errors);

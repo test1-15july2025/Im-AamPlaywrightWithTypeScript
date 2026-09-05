@@ -96,9 +96,11 @@ test('Verify that making deposit of $10 by Paypal, increasing balance $60 in fir
     console.warn('Could not read lastCreatedUser.json, falling back to generated values:', msg);
   }
 
-  iafl.logIn(emailAddress, password);
+  await iafl.logIn(emailAddress, password);
 
-  await page.click("a:has-text('Claim Now')");
+  const claimNowLink = page.locator("a:has-text('Claim Now')");
+  await claimNowLink.waitFor({ state: 'visible', timeout: 20000 });
+  await claimNowLink.click({ force: true });
   await page.waitForLoadState('load');
 
   // await page.locator("div:has-text('PayPal')").click();
@@ -115,7 +117,7 @@ test('Verify that making deposit of $10 by Paypal, increasing balance $60 in fir
   await page.locator("button:has-text('Confirm Deposit')").click();
   await page.waitForLoadState('load');
 
-  await page.fill("#email']", "bulk-sb-7509c89e59cc4e9f9f079c6ab1@business.example.com");
+  await page.fill("#email", "bulk-sb-7509c89e59cc4e9f9f079c6ab1@business.example.com");
   await page.locator("#btnNext").click();
   await page.waitForLoadState('load');
 
