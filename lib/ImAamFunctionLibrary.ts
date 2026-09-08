@@ -1,4 +1,4 @@
-import { Page, expect } from "@playwright/test";
+import { Page } from "@playwright/test";
 // import ExcelJS from 'exceljs';
 import * as ExcelJS from 'exceljs';
 
@@ -157,12 +157,28 @@ export class ImAamFunctionLibrary {
 
 
   async getAccountBalance(): Promise<string> {
-    const balanceText = await this.page.locator("a[class^='header_balanceDisplay']").textContent();
-    try{
-      expect(this.page.locator("a[class^='header_balanceDisplay']").textContent()).not.toContain('...');
-    } catch {}
-    return balanceText ? balanceText.trim() : '';
-  }
+    const selector = "a[class^='header_balanceDisplay']";
+    const locator = this.page.locator(selector);
 
+    try {
+      await this.page.waitForFunction(
+        (sel) => {
+          const el = document.querySelector(sel);
+          return !!el && !(el.textContent || '').includes('...');
+        },
+        selector,
+        { timeout: 15000 }
+      );
+    } catch (e) {
+      // ignore timeout — we'll still try to read whatever text is present
+    }
+
+    const balanceText = await locator.textContent();
+    const normalizedBalanceText = balanceText ?? '';
+    const balanceAmount = normalizedBalanceText.includes('$')
+      ? normalizedBalanceText.split('$')[1]?.trim() ?? ''
+      : normalizedBalanceText.trim();
+    return balanceAmount ? balanceAmount : '';
+  }
 
 }

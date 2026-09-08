@@ -55,6 +55,11 @@ test.beforeAll('Launch browser', async () => {
 
   cfl = new CommonFunctionLibrary(page);
   await iafl.configTestFlow();
+
+  if (!iafl.envUrl || !iafl.envUrl.toLowerCase().includes('staging')) {
+    test.skip(true, `Skipping this test file because envUrl is not staging: ${iafl.envUrl || 'empty'}`);
+  }
+
   // await page.goto('https://staging.im-aam.com/');
   console.log('URL from Excel:', iafl.envUrl);
   // await page.goto(iafl.url);
@@ -139,8 +144,10 @@ test('Verify that making deposit of $10 by Paypal, increasing balance $60 in fir
   const rawBalance = await iafl.getAccountBalance();
   console.log('Balance after deposit: ', rawBalance);
 
-  balanceAmount = rawBalance.includes('$') ? rawBalance.split('$')[1].trim() : rawBalance.trim();
-  console.log('Balance amount after deposit: ', balanceAmount);
+  expect.soft(rawBalance.trim()).toBe('110.00');
+
+  // balanceAmount = rawBalance.includes('$') ? rawBalance.split('$')[1].trim() : rawBalance.trim();
+  // console.log('Balance amount after deposit: ', balanceAmount.trim());
 
   if (testInfo.errors.length > 0) {
     console.error("'Create User' Test failed with errors:", testInfo.errors);

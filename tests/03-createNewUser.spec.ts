@@ -398,41 +398,13 @@ test('Trial pop-up & balance verifications', async ({ }, testInfo) => {
   balanceText = await iafl2.getAccountBalance();
   console.log('Account balance before Top-up: ', balanceText);
 
-  if (testInfo.errors.length > 0) {
-    console.error('Test failed with errors:', testInfo.errors);
-  } else {
-    console.log('Test passed without errors.');
-  }
-
-});
-
-
-test.skip('has expected UI elements', async ({ }, testInfo) => {
-  // test('has expected UI elements', async (testInfo) => {
-  // test('has expected UI elements', async ({page},testInfo) => {
-  // await page.goto('https://staging.im-aam.com/');
-
-  // Check for the presence of key UI elements.
-  await expect.soft(page.locator("img[src='/logo.png']")).toBeVisible();
-  await expect.soft(page.locator("h1:has-text('The Investment Manager Powered by an Artificial Machine')")).toBeVisible();
-  await expect.soft(page.locator("img[src='/assets/landing/landing.png']")).toBeVisible();
-  await expect.soft(page.getByText('Identify the best opportunities in the share market today using AI-powered stock insights')).toBeVisible();
-  await expect.soft(page.locator("button:has-text('Login')")).toBeVisible();
-  await expect.soft(page.locator("button:has-text('Register')")).toBeVisible();
-  await expect.soft(page.locator("p:has-text('Continue As Guest')")).toBeVisible();
-  await expect.soft(page.locator("p[class^='page_landingBottom_text']")).toBeVisible();
-  await expect.soft(page.locator("img[src='/assets/landing/landing.png']")).toBeVisible();
-
-  // if(testInfo.page.pageErrors.length > 0) {
-  //   console.error('Test failed with errors:', testInfo.page.pageErrors);
-  // } else {
-  //   console.log('Test passed without errors.');
-  // }
+  expect.soft(balanceText.trim()).toBe('50.00');
 
   if (testInfo.errors.length > 0) {
     console.error('Test failed with errors:', testInfo.errors);
   } else {
     console.log('Test passed without errors.');
   }
+
 });
 // }
