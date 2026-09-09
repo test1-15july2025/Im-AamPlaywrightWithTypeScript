@@ -102,7 +102,10 @@ export class ImAamFunctionLibrary {
           break;
         } else {
           console.log(`Landing container not found on attempt ${i + 1}, reloading...`);
-          await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
+          try{
+            await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
+          }catch{}
+          // await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
         }
       } catch (error) {
         console.error(`Navigation attempt ${i + 1} failed:`, error);

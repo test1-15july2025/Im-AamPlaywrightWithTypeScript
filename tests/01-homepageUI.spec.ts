@@ -91,7 +91,8 @@ test('Home page has expected UI elements', async ({ }, testInfo) => {
   await expect.soft(page.locator("button:has-text('Login')")).toBeVisible();
   await expect.soft(page.locator("button:has-text('Register')")).toBeVisible();
   await expect.soft(page.locator("p:has-text('Continue As Guest')")).toBeVisible();
-  await expect.soft(page.locator("p[class^='page_landingBottom_text']")).toBeVisible();
+  await expect.soft(page.locator("p[class^='page_landingBottom_text']").nth(0)).toBeVisible();
+  await expect.soft(page.locator("p[class^='page_landingBottom_text']").nth(1)).toBeVisible();
   await expect.soft(page.locator("img[src='/assets/landing/landing.png']")).toBeVisible();
 
   // if(testInfo.page.pageErrors.length > 0) {
