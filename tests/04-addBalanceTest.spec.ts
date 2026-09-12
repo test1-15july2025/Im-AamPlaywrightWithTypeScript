@@ -103,9 +103,12 @@ test('Verify that making deposit of $10 by Paypal, increasing balance $60 in fir
 
   await iafl.logIn(emailAddress, password);
 
+  await page.locator("button[class^='TrialBanner_closeButton']").first().click();
+
   const claimNowLink = page.locator("a:has-text('Claim Now')");
   await claimNowLink.waitFor({ state: 'visible', timeout: 20000 });
   await claimNowLink.click({ force: true });
+  // await claimNowLink.click();
   await page.waitForLoadState('load');
 
   // await page.locator("div:has-text('PayPal')").click();

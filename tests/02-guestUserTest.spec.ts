@@ -88,6 +88,8 @@ test('Verify that correct free trial pop-up is there for the guest user', async 
 
   await expect(page.locator("div[class*='FreeTrialPopUP_trialModal']")).toBeHidden();
 
+  await page.locator("svg[class^='header_alignLeft']").click();
+
   if (testInfo.errors.length > 0) {
     console.error('Test failed with errors:', testInfo.errors);
   } else {

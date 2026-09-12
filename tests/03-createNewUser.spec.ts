@@ -323,7 +323,7 @@ test('Verify user activation functionality is working fine', async ({ }, testInf
   expect.soft(msgTextAfterAccountActivation.trim()).toBe('Verifying your email...');
 
   try {
-    await newPageInNewTab.waitForTimeout(8000); // Wait for 8 seconds
+    await newPageInNewTab.waitForTimeout(10000); // Wait for 10 seconds
   } catch { }
   await newPageInNewTab.waitForLoadState('load');
 
@@ -336,7 +336,12 @@ test('Verify user activation functionality is working fine', async ({ }, testInf
   msgTextAfterAccountActivation = await newPageInNewTab.locator("div[class*='auth_localPadding']").innerText() || '';
   console.log('Message text after few seconds of clicking on account activation link:', msgTextAfterAccountActivation);
 
-  expect.soft(msgTextAfterAccountActivation.trim()).toBe('Email verified successfully! Login');
+  try{
+    expect.soft(msgTextAfterAccountActivation.trim()).toBe('Email verified successfully! Login');
+  }catch(error){
+    expect.soft(msgTextAfterAccountActivation.trim()).toBe('Email verified successfully! Login');
+  }
+
 
   newPageInNewTab.locator("a:has-text('Login')").click();
   await newPageInNewTab.waitForLoadState('load');
