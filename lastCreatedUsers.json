@@ -1,0 +1,14 @@
+{
+  "users": [
+    {
+      "userID": "test051020261801151",
+      "emailAddress": "test051020261801151@yopmail.com",
+      "password": "Test@123"
+    },
+    {
+      "userID": "test051020261801221",
+      "emailAddress": "test051020261801221@yopmail.com",
+      "password": "Test@123"
+    }
+  ]
+}

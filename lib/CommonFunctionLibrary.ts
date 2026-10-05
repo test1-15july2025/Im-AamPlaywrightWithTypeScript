@@ -1,70 +1,81 @@
-import {Page} from "@playwright/test";
+import { Page } from "@playwright/test";
 import { ImAamFunctionLibrary } from "./ImAamFunctionLibrary";
 import ExcelJS from 'exceljs';
+import { setTimeout as delay } from 'node:timers/promises';
 
 
 export class CommonFunctionLibrary {
-    // private page: Page;
-    page: Page;
-    // iafl: ImAamFunctionLibrary;
-    
-    constructor(page: Page) {
-        this.page = page;
-        // this.iafl = new ImAamFunctionLibrary(this.page);
-        // this.iafl.configTestFlow();
+  // private page: Page;
+  page: Page;
+  // iafl: ImAamFunctionLibrary;
+
+  constructor(page: Page) {
+    this.page = page;
+    // this.iafl = new ImAamFunctionLibrary(this.page);
+    // this.iafl.configTestFlow();
+  }
+  // public url: string;
+  url: string = '';
+  filePath: string = 'test-data/testData.xlsx';
+
+
+
+  getTimestampManual(): string {
+    const now = new Date();
+
+    const dd = String(now.getDate()).padStart(2, '0');
+    const MM = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+    const yyyy = String(now.getFullYear());
+
+    const HH = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+
+    return `${dd}${MM}${yyyy}${HH}${mm}${ss}`;
+  }
+
+  async waitForSeconds(seconds: number): Promise<void> {
+    await delay(seconds * 1000);
+  }
+
+  async waitForPageToLoad(timeout: number = 30000): Promise<void> {
+    try {
+      await this.page.waitForLoadState('load', { timeout });
+    } catch (error) {
+      console.error(`Error while waiting for page to load:`, error);
     }
-    // public url: string;
-    url: string = '';
-    filePath: string = 'test-data/testData.xlsx';
+  }
+
+  async configTestFlow() {
+    // const workbook = new ExcelJS.Workbook();
+    // await workbook.xlsx.readFile(this.filePath);
+    // const worksheet = workbook.getWorksheet('testFlow');
+    // if (!worksheet) {
+    //     throw new Error("Worksheet 'testFlow' not found in test-data/testData.xlsx");
+    // }
+
+    // // const urlCell = worksheet.getCell('A1').value;
+    // const urlCell = worksheet.getCell('A1').value;
+    // this.url = typeof urlCell === 'string' ? urlCell : String(urlCell || '');
+    // if (!this.url) {
+    //     throw new Error("Cell A1 in worksheet 'testFlow' does not contain a valid URL.");
+    // }
+
+    this.url = await this.getFirstRowValueByHeader('testFlow', 'Environment URL');
 
 
+    // console.log('URL from Excel:', this.url);
+    // await this.page.goto(this.url);
 
-    getTimestampManual(): string {
-        const now = new Date();
-
-        const dd = String(now.getDate()).padStart(2, '0');
-        const MM = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
-        const yyyy = String(now.getFullYear());
-        
-        const HH = String(now.getHours()).padStart(2, '0');
-        const mm = String(now.getMinutes()).padStart(2, '0');
-        const ss = String(now.getSeconds()).padStart(2, '0');
-
-        return `${dd}${MM}${yyyy}${HH}${mm}${ss}`;
-    }
+    // await this.page.click('text=Accept All Cookies');
+    // await this.page.click('text=Get Started');
+  }
 
 
-
-    async configTestFlow() {
-        // const workbook = new ExcelJS.Workbook();
-        // await workbook.xlsx.readFile(this.filePath);
-        // const worksheet = workbook.getWorksheet('testFlow');
-        // if (!worksheet) {
-        //     throw new Error("Worksheet 'testFlow' not found in test-data/testData.xlsx");
-        // }
-
-        // // const urlCell = worksheet.getCell('A1').value;
-        // const urlCell = worksheet.getCell('A1').value;
-        // this.url = typeof urlCell === 'string' ? urlCell : String(urlCell || '');
-        // if (!this.url) {
-        //     throw new Error("Cell A1 in worksheet 'testFlow' does not contain a valid URL.");
-        // }
-
-        this.url = await this.getFirstRowValueByHeader('testFlow', 'Environment URL');
-
-
-        // console.log('URL from Excel:', this.url);
-        // await this.page.goto(this.url);
-
-        // await this.page.click('text=Accept All Cookies');
-        // await this.page.click('text=Get Started');
-    }
-
-
-    async getFirstRowValueByHeader(sheetName: string, columnName: string): Promise<string> {
+  async getFirstRowValueByHeader(sheetName: string, columnName: string): Promise<string> {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(this.filePath);
-    
+
     const worksheet = workbook.getWorksheet(sheetName);
     if (!worksheet) {
       throw new Error(`Worksheet with name "${sheetName}" not found.`);

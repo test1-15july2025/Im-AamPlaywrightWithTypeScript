@@ -1,7 +1,8 @@
-import { test, expect, Browser, BrowserContext, Page, chromium, firefox, webkit } from '@playwright/test';
+import { test, expect, Browser, BrowserContext, Page } from '@playwright/test';
 // import { test, expect, Browser, BrowserContext, Page } from '@playwright/test';
 import { ImAamFunctionLibrary } from '../lib/ImAamFunctionLibrary';
 import { CommonFunctionLibrary } from '../lib/CommonFunctionLibrary';
+import { BrowserSession, closeBrowserSession, createBrowserSession } from '../lib/browserSession';
 
 test.describe.configure({ mode: 'serial' }); // Run tests in this block sequentially
 test.setTimeout(180000);
@@ -9,6 +10,7 @@ test.setTimeout(180000);
 let browser: Browser;
 let context: BrowserContext;
 let page: Page;
+let browserSession: BrowserSession;
 
 let iafl: ImAamFunctionLibrary;
 let cfl: CommonFunctionLibrary;
@@ -19,29 +21,13 @@ let cfl: CommonFunctionLibrary;
 //   this.page = page;
 // }
 
-// Get browser type from environment or default to chromium
-const browserType = process.env.BROWSER_TYPE === 'firefox' ? firefox : process.env.BROWSER_TYPE === 'webkit' ? webkit : chromium;
-
 test.beforeAll('Launch browser', async () => {
   console.log('Setup: Preparing environment...');
 
-  browser = await browserType.launch({
-    headless: false,
-    args: ['--start-maximized'],
-    timeout: 120000,
-  });
-  context = await browser.newContext({
-    viewport: null,
-    deviceScaleFactor: undefined,
-    isMobile: false,
-    httpCredentials: {
-      // username: 'test',
-      // password: 'test',
-      username: 'asdf',
-      password: 'nownew',
-    },
-  });
-  page = await context.newPage();
+  browserSession = await createBrowserSession();
+  browser = browserSession.browser;
+  context = browserSession.context;
+  page = browserSession.page;
   iafl = new ImAamFunctionLibrary(page);
   cfl = new CommonFunctionLibrary(page);
   await iafl.configTestFlow();
@@ -51,6 +37,15 @@ test.beforeAll('Launch browser', async () => {
   console.log('URL from Excel:', iafl.envUrl);
   await iafl.navigateToBaseUrl();
   await page.waitForLoadState('load', { timeout: 60000 });
+
+  // const acceptCookiesButton = page.getByRole('button', { name: /accept all cookies/i });
+  // try {
+  //   await acceptCookiesButton.first().waitFor({ state: 'visible', timeout: 10000 });
+  //   await acceptCookiesButton.first().click();
+  // } catch {
+  //   // The cookie ribbon may not be shown when consent is already stored.
+  // }
+
   // await page.goto('https://staging.im-aam.com/');
   // Perform any necessary setup actions here, such as logging in or preparing test data.
   // await browser.close();  
@@ -58,9 +53,7 @@ test.beforeAll('Launch browser', async () => {
 
 test.afterAll(async () => {
   console.log('Teardown: Cleaning up environment...');
-  await page.close();
-  await context.close();
-  await browser.close();
+  await closeBrowserSession(browserSession);
 });
 
 test('has title', async () => {
@@ -83,17 +76,22 @@ test('Home page has expected UI elements', async ({ }, testInfo) => {
   // await page.goto('https://staging.im-aam.com/');
 
   // Check for the presence of key UI elements.
-  await expect.soft(page.locator("img[src='/logo.png']")).toBeVisible();
-  await expect.soft(page.locator("h1:has-text('The Investment Manager Powered by an Artificial Machine')")).toBeVisible();
-  await expect.soft(page.locator("img[src='/assets/landing/landing.png']")).toBeVisible();
+  await expect.soft(page.locator("img[src='/logo.png']")).toHaveCount(2);
+  // await expect.soft(page.locator("h1:has-text('The Investment Manager Powered by an Artificial Machine')")).toBeVisible();
+  await expect.soft(page.locator("h1:has-text('Find the Best Stocks to Buy Now')")).toBeVisible();
+  // await expect.soft(page.locator("img[src='/assets/landing/landing.png']")).toBeVisible();
+  await expect.soft(page.locator("[class^='landing_heroChart']")).toBeVisible();
   // await expect.soft(page.getByText('Identify the best opportunities in the share market today using AI-powered stock insights')).toBeVisible();
-  await expect.soft(page.getByText('Discover the best US stocks to buy now with AI-powered stock market analysis, stock recommendations, and real-time market insights.')).toBeVisible();
-  await expect.soft(page.locator("button:has-text('Login')")).toBeVisible();
-  await expect.soft(page.locator("button:has-text('Register')")).toBeVisible();
-  await expect.soft(page.locator("p:has-text('Continue As Guest')")).toBeVisible();
-  await expect.soft(page.locator("p[class^='page_landingBottom_text']").nth(0)).toBeVisible();
-  await expect.soft(page.locator("p[class^='page_landingBottom_text']").nth(1)).toBeVisible();
-  await expect.soft(page.locator("img[src='/assets/landing/landing.png']")).toBeVisible();
+  // await expect.soft(page.getByText('Discover the best US stocks to buy now with AI-powered stock market analysis, stock recommendations, and real-time market insights.')).toBeVisible();
+  await expect.soft(page.getByText('AI-powered research covering the best stocks to buy for long term, top growth stocks to buy now, and best dividend stocks to buy now — built around US stocks, company fundamentals, technical indicators, and real-time market signals.')).toBeVisible();
+  await expect.soft(page.locator("a:has-text('Login')")).not.toHaveCount(0);
+  await expect.soft(page.locator("a[href='/registration']")).not.toHaveCount(0);
+  await expect.soft(page.locator("button:has-text('Watch Video')")).not.toHaveCount(0);
+  // await expect.soft(page.locator("button:has-text('Register')")).toBeVisible();
+  await expect.soft(page.locator("a:has-text('Continue as Guest →')")).toBeVisible();
+  // await expect.soft(page.locator("p[class^='page_landingBottom_text']").nth(0)).toBeVisible();
+  // await expect.soft(page.locator("p[class^='page_landingBottom_text']").nth(1)).toBeVisible();
+  // await expect.soft(page.locator("img[src='/assets/landing/landing.png']")).toBeVisible();
 
   // if(testInfo.page.pageErrors.length > 0) {
   //   console.error('Test failed with errors:', testInfo.page.pageErrors);

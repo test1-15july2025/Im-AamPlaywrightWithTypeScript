@@ -1,7 +1,10 @@
 import { Page } from "@playwright/test";
 // import ExcelJS from 'exceljs';
+import { CommonFunctionLibrary } from '../lib/CommonFunctionLibrary';
 import * as ExcelJS from 'exceljs';
 
+
+let cfl: CommonFunctionLibrary;
 
 export class ImAamFunctionLibrary {
   // private page: Page;
@@ -9,6 +12,7 @@ export class ImAamFunctionLibrary {
 
   constructor(page: Page) {
     this.page = page;
+    cfl = new CommonFunctionLibrary(page);
   }
   // public url: string;
   envUrl: string = '';
@@ -76,8 +80,8 @@ export class ImAamFunctionLibrary {
     // await this.page.goto(this.url);
     await this.navigateToBaseUrl();
     await this.page.waitForLoadState('load');
-    await this.page.getByText('Login').waitFor({ state: 'visible' });
-    await this.page.getByText('Login').click();
+    await this.page.getByText('Login').first().waitFor({ state: 'visible' });
+    await this.page.getByText('Login').first().click();
     await this.page.waitForLoadState('load');
     await this.page.getByPlaceholder('Enter your username or email').fill(userName);
     await this.page.getByPlaceholder('Enter Password').fill(password);
@@ -85,43 +89,215 @@ export class ImAamFunctionLibrary {
     await this.page.waitForLoadState('load');
   }
 
-  async navigateToBaseUrl() {
-    console.log(`Navigating to base URL: ${this.envUrl}`);
-    for (let i = 0; i < 10; i++) {
+  async logOut() {
+    // await this.page.locator("img[alt='Profile Image']").click();
+    // await this.page.waitForLoadState('load');
+    // await this.page.locator("a:has-text('Logout')").click();
+    // await this.page.waitForLoadState('load');
+    // await this.page.locator("[class^='nav_singleNavContainer']").nth(3).click();
+    await this.page.locator("a[title='Logout']").click();
+    await this.page.waitForLoadState('load');
+  }
+
+  async goToDepositPage() {
+    await this.page.locator("img[alt='Profile Image']").first().click();
+    await this.page.waitForLoadState('load');
+    await this.page.locator("a:has-text('Deposit')").click();
+    await this.page.waitForLoadState('load');
+  }
+
+  async makeDeposit(amount: string, paymentMethod: string) {
+    // await this.page.locator("img[alt='Profile Image']").click();
+    // await this.page.waitForLoadState('load');
+    // await this.page.locator("a:has-text('Deposit')").click();
+    // await this.page.waitForLoadState('load');
+    if (paymentMethod.toLowerCase() === 'paypal') {
+      // Handle PayPal specific deposit logic
+      await this.page.locator("g[clip-path*='paypal_icon']").click();
+      // await this.page.waitForLoadState('load');
+
+      await this.page.fill("div[class^='input_inputContainer']>div>input", amount);
+      await cfl.waitForSeconds(2);
+      await this.page.locator("button:has-text('Deposit')").scrollIntoViewIfNeeded();
+      await cfl.waitForSeconds(2);
+      await this.page.locator("button:has-text('Deposit')").click();
+      await cfl.waitForSeconds(2);
+      await this.page.waitForLoadState('load');
+      await cfl.waitForSeconds(8);
+
       try {
-        try {
-          await this.page.goto(this.envUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-        } catch (error) {
-          await this.page.keyboard.press('Escape');
-          await this.page.keyboard.press('F5');
-          // await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
+        if (await this.page.locator("button:has-text('Confirm Deposit')").count() > 0) {
+          await this.page.locator("button:has-text('Confirm Deposit')").scrollIntoViewIfNeeded();
+          await this.page.locator("button:has-text('Confirm Deposit')").click();
+          await this.page.waitForLoadState('load');
         }
-        await this.page.waitForLoadState('load', { timeout: 60000 });
-        if (await this.page.locator("[class*='page_landingContainer']").count() > 0) {
-          console.log(`Navigation succeeded on attempt ${i + 1}`);
-          break;
-        } else {
-          console.log(`Landing container not found on attempt ${i + 1}, reloading...`);
-          try{
-            await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
-          }catch{}
-          // await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
+      } catch (error) { }
+      await cfl.waitForSeconds(8);
+      try {
+        // await this.page.locator("#email").waitFor({ state: 'visible', timeout: 4000 });
+        if (await this.page.locator("#email").count() > 0) {
+          await this.page.fill("#email", "bulk-sb-7509c89e59cc4e9f9f079c6ab1@business.example.com");
+          await this.page.locator("#btnNext").click();
+          await this.page.waitForLoadState('load');
+          await this.page.locator("#password").fill("iaam@123");
+          await this.page.locator("#btnLogin").click();
+          await this.page.waitForLoadState('load');
         }
-      } catch (error) {
-        console.error(`Navigation attempt ${i + 1} failed:`, error);
-        if (this.page.isClosed()) {
-          throw new Error(`Page closed while retrying navigation: ${error}`);
+      } catch (error) { }
+
+      await this.page.locator("button:has-text('Complete Purchase')").click();
+      try{
+        cfl.waitForPageToLoad(30000);
+      }catch(error){}
+      // try {
+      //   await this.page.waitForTimeout(10000); // Wait for 10 seconds
+      // } catch { }
+      await cfl.waitForSeconds(10);
+      try{
+        await this.page.waitForLoadState('load');
+      }catch(error){}
+      await cfl.waitForSeconds(10);
+    } else {
+      await this.page.locator("[class^='page_cardsContainer']").click();
+      await this.page.fill("div[class^='input_inputContainer']>div>input", amount);
+
+      await this.page.locator("button:has-text('Deposit')").scrollIntoViewIfNeeded();
+      await this.page.locator("button:has-text('Deposit')").click();
+      await this.page.waitForLoadState('load');
+      await cfl.waitForSeconds(1);
+      try {
+        if (await this.page.locator("button:has-text('Confirm Deposit')").count() > 0) {
+          await this.page.locator("button:has-text('Confirm Deposit')").scrollIntoViewIfNeeded();
+          await this.page.locator("button:has-text('Confirm Deposit')").click();
+          // await this.page.waitForLoadState('load');
+          await cfl.waitForPageToLoad(30000);
         }
-        await new Promise((resolve) => setTimeout(resolve, 4000));
-        await this.page.keyboard.press('Control+F5');
+      } catch (error) {}
+      await cfl.waitForSeconds(10);
+
+      if (this.page.isClosed()) {
+        const activePage: Page | undefined = this.page.context().pages().find(
+          (candidatePage: Page) => !candidatePage.isClosed()
+        );
+        if (!activePage) {
+          throw new Error('The card payment page was closed and no active payment page is available.');
+        }
+        this.page = activePage;
+        cfl = new CommonFunctionLibrary(activePage);
+        await activePage.waitForLoadState('domcontentloaded');
       }
+
+      // const iframeTitles = await this.page.locator('iframe').evaluateAll(
+      //   els => els.map(el => ({ title: el.getAttribute('title'), src: el.getAttribute('src') }))
+      // );
+      // console.log(iframeTitles);
+
+      const cardFrame = this.page.frameLocator("iframe[title='PayPal-card']");
+
+      try {
+        await cardFrame.locator("//span[contains(text(),'Debit or Credit Card')]").first().waitFor({ state: 'visible', timeout: 10000 });
+      } catch (error) {
+        console.log('waitFor failed with error:', error);
+      }
+
+      // try{
+      //   await cardFrame.locator("span:has-text('Debit or Credit Card')").waitFor({ state: 'visible', timeout: 10000 });
+      // }catch (error) { }
+
+      // await this.page.locator("//span[contains(text(),'Debit or Credit Card')]").scrollIntoViewIfNeeded();
+      // await this.page.waitForLoadState('load');
+      // await cfl.waitForSeconds(2);
+      // await this.page.locator("//span[contains(text(),'Debit or Credit Card')]").click();
+
+      // await this.page.locator("div#buttons-container span").click();
+
+      const debitOrCreditCardOption = cardFrame.locator("//span[contains(text(),'Debit or Credit Card')]").first();
+      await debitOrCreditCardOption.waitFor({ state: 'visible', timeout: 30000 });
+      await debitOrCreditCardOption.click();
+      // await debitOrCreditCardOption.click({ force: true });
+
+      await this.page.waitForLoadState('load');
+      await cfl.waitForSeconds(2);
+
+      // await cardFrame.locator("span:has-text('Debit or Credit Card')").scrollIntoViewIfNeeded();
+      // await cardFrame.locator("span:has-text('Debit or Credit Card')").click();
+      // await this.page.waitForLoadState('load');
+      // await cfl.waitForSeconds(2);
+
+      const cardDetailsFrame = cardFrame.frameLocator("iframe[title='paypal_card_form']");
+
+      // await cardDetailsFrame.locator("#credit-card-number").fill("4111111111111111");
+      await cardDetailsFrame.locator("#credit-card-number").fill("4012888888881881");
+      
+      await cardDetailsFrame.locator("#expiry-date").fill("12/28");
+      await cardDetailsFrame.locator("#credit-card-security").fill("123");
+
+      await cardDetailsFrame.locator("input[name='givenName']").fill("testGivenName");
+      await cardDetailsFrame.locator("input[name='familyName']").fill("testSurname");
+      await cardDetailsFrame.locator("input[name='postcode']").fill("38006");
+      await cardDetailsFrame.locator("input[name='phone']").fill("9000000001");
+      await cardDetailsFrame.locator("input[name='email']").fill("abcd@yopmail.com");
+      await cardDetailsFrame.locator("button#submit-button").click();
+      try{
+        await this.page.waitForLoadState('load');
+      }catch(error){}
+      await cfl.waitForSeconds(10);
+      try{
+        await this.page.waitForLoadState('load');
+      }catch(error){}
+      await cfl.waitForSeconds(10);
     }
 
-    const acceptButton = this.page.locator("button:has-text('Accept')");
-    if (await acceptButton.count() > 0) {
-      await acceptButton.first().click();
-      this.page.waitForLoadState('load');
-    }
+
+
+  }
+
+  async navigateToBaseUrl() {
+    console.log(`Navigating to base URL: ${this.envUrl}`);
+    try {
+      for (let i = 0; i < 11; i++) {
+        if (i == 10) {
+          break;
+        } else {
+          try {
+            try {
+              await this.page.goto(this.envUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+            } catch (error) {
+              await this.page.keyboard.press('Escape');
+              await this.page.keyboard.press('F5');
+              // await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
+            }
+            await this.page.waitForLoadState('load', { timeout: 60000 });
+            // if (await this.page.locator("[class*='page_landingContainer']").count() > 0) {
+            if (await this.page.locator("[class*='marketing_page']").count() > 0) {
+              console.log(`Navigation succeeded on attempt ${i + 1}`);
+              break;
+            } else {
+              console.log(`Landing container not found on attempt ${i + 1}, reloading...`);
+              try {
+                await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
+              } catch { }
+              // await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
+            }
+          } catch (error) {
+            console.error(`Navigation attempt ${i + 1} failed:`, error);
+            if (this.page.isClosed()) {
+              throw new Error(`Page closed while retrying navigation: ${error}`);
+            }
+            await new Promise((resolve) => setTimeout(resolve, 4000));
+            await this.page.keyboard.press('Control+F5');
+          }
+        }
+      }
+    } catch (error) { }
+
+    try {
+      const acceptButton = this.page.locator("button:has-text('Accept')");
+      if (await acceptButton.count() > 0) {
+        await acceptButton.first().click();
+        this.page.waitForLoadState('load');
+      }
+    } catch (error) { }
   }
 
 
