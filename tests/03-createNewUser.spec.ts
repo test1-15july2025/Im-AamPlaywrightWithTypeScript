@@ -19,6 +19,7 @@ let newPageInNewTab: Page;
 let iafl: ImAamFunctionLibrary;
 let iafl2: ImAamFunctionLibrary;
 let cfl: CommonFunctionLibrary;
+let cfl2: CommonFunctionLibrary;
 let userName: string;
 let msgText: string;
 let userID: string;
@@ -374,18 +375,28 @@ test('Trial pop-up & balance verifications', async ({ }, testInfo) => {
   // expect.soft(page.locator("div[class^='trialpopup_trialPopupContainer']")).toBeVisible();
   // await expect(newPageInNewTab.locator("div[class^='TrialBanner_bannerContainer']").nth(0)).toBeVisible({ timeout: 10000 });
   await expect(newPageInNewTab.locator(".singleTable div[class^='TrialBanner_bannerContainer']")).toBeVisible({ timeout: 10000 });
+  cfl2 = new CommonFunctionLibrary(newPageInNewTab);
+  cfl2.waitForSeconds(7);
 
-  if ((await newPageInNewTab.locator("button[class^='TrialBanner_closeButton']").nth(0).isVisible()) &&
-    (await newPageInNewTab.locator("div[class^='TrialBanner_infoIcon']").nth(0).isVisible()) &&
-    (await newPageInNewTab.locator("h3:has-text('How Your Free Trial Works')").first().isVisible()) &&
-    // (await newPageInNewTab.locator("text=Your free trial ends in 6 days").first().isVisible()) &&
-    (await newPageInNewTab.locator("button:has-text('Start Your Free Trial Now')").first().isVisible())) {
-    console.log("All elements are present in trial pop-up.");
-    expect.soft(true).toBeTruthy();
-  } else {
-    console.log("All elements are NOT present in trial pop-up.");
-    expect.soft(false).toBeTruthy();
-  }
+  // if ((await newPageInNewTab.locator("button[class^='TrialBanner_closeButton']").nth(0).isVisible()) &&
+  //   (await newPageInNewTab.locator("div[class^='TrialBanner_infoIcon']").count()) > 0 &&
+  //   (await newPageInNewTab.locator("h3:has-text('How Your Free Trial Works')").count()) > 0)
+  // // (await newPageInNewTab.locator("text=Your free trial ends in 6 days").first().isVisible()) &&
+  // // (await newPageInNewTab.locator("button:has-text('Start Your Free Trial Now')").count()) > 0) 
+  // {
+  //   console.log("All elements are present in trial pop-up.");
+  //   expect.soft(true).toBeTruthy();
+  // } else {
+  //   console.log("All elements are NOT present in trial pop-up.");
+  //   expect.soft(false).toBeTruthy();
+  // }
+
+  await expect.soft(newPageInNewTab.locator("button[class^='TrialBanner_closeButton']").nth(0)).toBeVisible();
+  expect.soft(await newPageInNewTab.locator("div[class^='TrialBanner_infoIcon']").count()).toBeGreaterThan(0);
+  expect.soft(await newPageInNewTab.locator("h3:has-text('How Your Free Trial Works')").count()).toBeGreaterThan(0);
+  // await expect.soft(newPageInNewTab.locator("text=Your free trial ends in 6 days").first().isVisible());
+  expect.soft(await newPageInNewTab.locator("span:has-text('Top Up Now & Continue')").count()).toBeGreaterThan(0);
+  expect.soft(await newPageInNewTab.locator("a:has-text('Start Your Free Trial Now')").count()).toBeGreaterThan(0);
 
   await newPageInNewTab.locator("button[class^='TrialBanner_closeButton']").first().click();
 

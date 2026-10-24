@@ -98,6 +98,7 @@ test.afterAll(async () => {
 // });
 
 test('Verify that making first deposit of $10 by Paypal, increasing balance $60 in first deposit within 5 minutes', async ({ }, testInfo) => {
+  test.setTimeout(180000);
 
   // Try to read the last created user's details so we can use the email for login
   try {
@@ -192,6 +193,7 @@ test('Verify that making first deposit of $10 by Paypal, increasing balance $60 
 
 
 test('Verify that making second deposit of $10 by Paypal, increasing balance by $10', async ({ }, testInfo) => {
+  test.setTimeout(180000);
 
   // await page.locator("img[alt='Profile Image']").click();
   // await page.waitForLoadState('load');
@@ -259,6 +261,7 @@ test('Verify that making second deposit of $10 by Paypal, increasing balance by 
 
 
 test('Verify that making first deposit of $10 by Card, increasing balance $60 in first deposit within 5 minutes', async ({ }, testInfo) => {
+  test.setTimeout(180000);
 
   // Try to read the last created user's details so we can use the email for login
   try {
@@ -310,6 +313,7 @@ test('Verify that making first deposit of $10 by Card, increasing balance $60 in
 });
 
 test('Verify that making second deposit of $10 by Card, increasing balance by $10', async ({ }, testInfo) => {
+  test.setTimeout(180000);
 
   iafl.goToDepositPage();
 

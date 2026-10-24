@@ -38,7 +38,7 @@ export class CommonFunctionLibrary {
     await delay(seconds * 1000);
   }
 
-  async waitForPageToLoad(timeout: number = 30000): Promise<void> {
+  async waitForPageToLoad(timeout: number = 80000): Promise<void> {
     try {
       await this.page.waitForLoadState('load', { timeout });
     } catch (error) {

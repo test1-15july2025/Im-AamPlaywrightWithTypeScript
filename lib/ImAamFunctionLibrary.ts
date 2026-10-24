@@ -77,8 +77,16 @@ export class ImAamFunctionLibrary {
 
 
   async logIn(userName: string, password: string) {
+    if (this.page.isClosed()) {
+      throw new Error('Cannot log in because the Playwright page is already closed.');
+    }
+
     // await this.page.goto(this.url);
     await this.navigateToBaseUrl();
+    if (this.page.isClosed()) {
+      throw new Error('The page closed while navigating to the login screen.');
+    }
+
     await this.page.waitForLoadState('load');
     await this.page.getByText('Login').first().waitFor({ state: 'visible' });
     await this.page.getByText('Login').first().click();
@@ -146,13 +154,13 @@ export class ImAamFunctionLibrary {
       } catch (error) { }
 
       await this.page.locator("button:has-text('Complete Purchase')").click();
-      try{
-        cfl.waitForPageToLoad(30000);
-      }catch(error){}
+      // try{
+      //   cfl.waitForPageToLoad(60000);
+      // }catch(error){}
       // try {
       //   await this.page.waitForTimeout(10000); // Wait for 10 seconds
       // } catch { }
-      await cfl.waitForSeconds(10);
+      await cfl.waitForSeconds(20);
       try{
         await this.page.waitForLoadState('load');
       }catch(error){}

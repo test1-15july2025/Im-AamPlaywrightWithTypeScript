@@ -68,7 +68,7 @@ test('Verify that correct free trial pop-up is there for the guest user', async 
   await expect.soft(page.locator("img[src='/trial-icon.webp']")).toBeVisible();
   await expect.soft(page.locator("h2:has-text('Start Your Free 7-Day Trial Today!')")).toBeVisible();
   await expect.soft(page.locator("p[class^='FreeTrialPopUP_trialText']")).toContainText('Get instant access to exclusive AI-powered stock recommendations and discover the best stocks to buy now.');
-  await expect.soft(page.locator("p>span")).toContainText('just sign up and start exploring!');
+  await expect.soft(page.locator("p>span").first()).toContainText('just sign up and start exploring!');
   await expect.soft(page.locator("ul[class^='FreeTrialPopUP_trialList']>li").nth(0)).toHaveText('✔ 7 days of free stock picks');
   await expect.soft(page.locator("ul[class^='FreeTrialPopUP_trialList']>li").nth(1)).toHaveText('✔ Real-time stock analysis');
   await expect.soft(page.locator("ul[class^='FreeTrialPopUP_trialList']>li").nth(2)).toHaveText('✔ AI-powered insights');
@@ -111,7 +111,8 @@ test("Verify that no table cell contains 'N/A' in position trader table", async 
 });
 
 test("Verify that no table cell contains 'N/A' in swing trader table", async ({ }, testInfo) => {
-  await page.click("a:has-text('Swing Trader')");
+  // await page.click("a:has-text('Swing Trader')");
+  await page.click("a:has-text('Swing Trade Picks')");
   await page.waitForLoadState('load', { timeout: 60000 });
   await cfl.waitForSeconds(5);
   
@@ -137,7 +138,8 @@ test("Verify that no table cell contains 'N/A' in swing trader table", async ({ 
 });
 
 test("Verify that no table cell contains 'N/A' in daily trader table", async ({ }, testInfo) => {
-  await page.click("a:has-text('Daily Trader')");
+  // await page.click("a:has-text('Daily Trader')");
+  await page.click("a:has-text('Daily Trade Picks')");
   await page.waitForLoadState('load', { timeout: 60000 });
   await cfl.waitForSeconds(5);
   if(await page.locator("div[class^='porfolioTable_tableContainer'] td").count() > 0){
