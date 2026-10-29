@@ -200,6 +200,8 @@ export class ImAamFunctionLibrary {
       // );
       // console.log(iframeTitles);
 
+      await this.page.locator("iframe[title='PayPal-card']").waitFor({ state: 'visible', timeout: 30000 });
+
       const cardFrame = this.page.frameLocator("iframe[title='PayPal-card']");
 
       try {
