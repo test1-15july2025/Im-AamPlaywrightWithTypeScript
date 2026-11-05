@@ -150,15 +150,21 @@ test.beforeAll('Launch browser', async () => {
   console.log('URL from Excel:', iafl.envUrl);
   // await page.goto(iafl.url);
   await iafl.navigateToBaseUrl();
-  await page.waitForLoadState('load', { timeout: 60000 });
+  try{
+    await page.waitForLoadState('load', { timeout: 60000 });
+  }catch (error) {
+    console.error('Page load timed out after 60 seconds:', error);
+  }
 
-  try {
-    const acceptButton = page.locator("button:has-text('Accept')");
-    if (await acceptButton.count() > 0) {
-      await acceptButton.first().click();
-      await page.waitForLoadState('load');
-    }
-  } catch (error) { }
+  // try {
+  //   const acceptButton = page.locator("button:has-text('Accept')");
+  //   if (await acceptButton.count() > 0) {
+  //     await acceptButton.first().click();
+  //     await page.waitForLoadState('load');
+  //   }
+  // } catch (error) { }
+
+  
 
   // const acceptCookiesButton = page.getByRole('button', { name: /accept all cookies/i });
   // try {

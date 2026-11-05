@@ -277,7 +277,9 @@ export class ImAamFunctionLibrary {
               await this.page.keyboard.press('F5');
               // await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
             }
-            await this.page.waitForLoadState('load', { timeout: 60000 });
+            try{
+              await this.page.waitForLoadState('load', { timeout: 60000 });
+            }catch(error){}
             // if (await this.page.locator("[class*='page_landingContainer']").count() > 0) {
             if (await this.page.locator("[class*='marketing_page']").count() > 0) {
               console.log(`Navigation succeeded on attempt ${i + 1}`);
