@@ -36,7 +36,7 @@ jobs:
         if [ -n "${{inputs.grep}}" ]; then
             npx Playwright test --grep "${{inputs.grep}}"
         else
-            npx playwright test tests/01-homepageUI.spec.ts tests/02-guestUserTest.spec.ts tests/03-createNewUser.spec.ts tests/04-addBalanceTest.spec.ts --workers=1
+            xvfb-run --auto-servernum npx playwright test tests/01-homepageUI.spec.ts tests/02-guestUserTest.spec.ts tests/03-createNewUser.spec.ts tests/04-addBalanceTest.spec.ts --workers=1
         fi
             
     - name: Upload Playwright Report
