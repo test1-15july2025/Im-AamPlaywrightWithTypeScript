@@ -103,6 +103,13 @@ export class ImAamFunctionLibrary {
     // await this.page.locator("a:has-text('Logout')").click();
     // await this.page.waitForLoadState('load');
     // await this.page.locator("[class^='nav_singleNavContainer']").nth(3).click();
+    try {
+      const acceptButton = this.page.locator("button:has-text('Accept')");
+      if (await acceptButton.count() > 0) {
+        await acceptButton.first().click();
+        await this.page.waitForLoadState('load');
+      }
+    } catch (error) { }
     await this.page.locator("a[title='Logout']").click();
     await this.page.waitForLoadState('load');
   }
@@ -161,9 +168,9 @@ export class ImAamFunctionLibrary {
       //   await this.page.waitForTimeout(10000); // Wait for 10 seconds
       // } catch { }
       await cfl.waitForSeconds(20);
-      try{
+      try {
         await this.page.waitForLoadState('load');
-      }catch(error){}
+      } catch (error) { }
       await cfl.waitForSeconds(10);
     } else {
       await this.page.locator("[class^='page_cardsContainer']").click();
@@ -174,13 +181,17 @@ export class ImAamFunctionLibrary {
       await this.page.waitForLoadState('load');
       await cfl.waitForSeconds(1);
       try {
+        await this.page.locator("button:has-text('Confirm Deposit')").waitFor({ state: 'visible', timeout: 30000 });
+      } catch (error) { }
+
+      try {
         if (await this.page.locator("button:has-text('Confirm Deposit')").count() > 0) {
           await this.page.locator("button:has-text('Confirm Deposit')").scrollIntoViewIfNeeded();
           await this.page.locator("button:has-text('Confirm Deposit')").click();
           // await this.page.waitForLoadState('load');
           await cfl.waitForPageToLoad(30000);
         }
-      } catch (error) {}
+      } catch (error) { }
       await cfl.waitForSeconds(10);
 
       if (this.page.isClosed()) {
@@ -237,8 +248,12 @@ export class ImAamFunctionLibrary {
       const cardDetailsFrame = cardFrame.frameLocator("iframe[title='paypal_card_form']");
 
       // await cardDetailsFrame.locator("#credit-card-number").fill("4111111111111111");
-      await cardDetailsFrame.locator("#credit-card-number").fill("4012888888881881");
-      
+      // await cardDetailsFrame.locator("#credit-card-number").fill("4012888888881881");
+      if (new Date().getDate() % 2 === 0) {
+        await cardDetailsFrame.locator("#credit-card-number").fill("6304000000000000");
+      } else
+        await cardDetailsFrame.locator("#credit-card-number").fill("4012888888881881");
+
       await cardDetailsFrame.locator("#expiry-date").fill("12/28");
       await cardDetailsFrame.locator("#credit-card-security").fill("123");
 
@@ -248,13 +263,13 @@ export class ImAamFunctionLibrary {
       await cardDetailsFrame.locator("input[name='phone']").fill("9000000001");
       await cardDetailsFrame.locator("input[name='email']").fill("abcd@yopmail.com");
       await cardDetailsFrame.locator("button#submit-button").click();
-      try{
+      try {
         await this.page.waitForLoadState('load');
-      }catch(error){}
+      } catch (error) { }
       await cfl.waitForSeconds(10);
-      try{
+      try {
         await this.page.waitForLoadState('load');
-      }catch(error){}
+      } catch (error) { }
       await cfl.waitForSeconds(10);
     }
 
@@ -263,6 +278,39 @@ export class ImAamFunctionLibrary {
   }
 
   async navigateToBaseUrl() {
+
+    await this.page.goto("https://mouseflow.com/opt-out/", { waitUntil: 'domcontentloaded', timeout: 100000 });
+
+    // await this.page.waitForFunction(
+    //   () => /Mouseflow is (enabled|disabled) in your browser/i.test(document.body.innerText),
+    //   undefined,
+    //   { timeout: 15000 }
+    // );
+    // await this.page.getByText(/Mouseflow is (enabled|disabled) in your browser/i).scrollIntoViewIfNeeded();
+    // await this.page.waitForLoadState('load');
+    // await cfl.waitForSeconds(3);
+    const toggleButton = this.page.locator("button#toggle");
+    if (/^disable$/i.test((await toggleButton.innerText()).trim())) {
+      await toggleButton.waitFor({ state: 'visible', timeout: 15000 });
+      await toggleButton.scrollIntoViewIfNeeded();
+      await toggleButton.click();
+      // wait for togglebutton text to change to "Enable" ignore case and whitespace
+      try {
+        await this.page.waitForFunction(
+          () => /^enable$/i.test(document.querySelector("button#toggle")?.textContent?.trim() ?? ""),
+          undefined,
+          { timeout: 15000 }
+        );
+      } catch (error) {
+        const disableButton = this.page.getByRole("button", { name: /disable/i });
+        if (await disableButton.count() > 0) {
+          await disableButton.click();
+        }
+      }
+    }
+    cfl = new CommonFunctionLibrary(this.page);
+    await cfl.waitForSeconds(3);
+
     console.log(`Navigating to base URL: ${this.envUrl}`);
     try {
       for (let i = 0; i < 11; i++) {
@@ -277,9 +325,9 @@ export class ImAamFunctionLibrary {
               await this.page.keyboard.press('F5');
               // await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
             }
-            try{
+            try {
               await this.page.waitForLoadState('load', { timeout: 60000 });
-            }catch(error){}
+            } catch (error) { }
             // if (await this.page.locator("[class*='page_landingContainer']").count() > 0) {
             if (await this.page.locator("[class*='marketing_page']").count() > 0) {
               console.log(`Navigation succeeded on attempt ${i + 1}`);
@@ -307,7 +355,7 @@ export class ImAamFunctionLibrary {
       const acceptButton = this.page.locator("button:has-text('Accept')");
       if (await acceptButton.count() > 0) {
         await acceptButton.first().click();
-        this.page.waitForLoadState('load');
+        await this.page.waitForLoadState('load');
       }
     } catch (error) { }
   }

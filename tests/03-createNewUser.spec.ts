@@ -150,9 +150,9 @@ test.beforeAll('Launch browser', async () => {
   console.log('URL from Excel:', iafl.envUrl);
   // await page.goto(iafl.url);
   await iafl.navigateToBaseUrl();
-  try{
+  try {
     await page.waitForLoadState('load', { timeout: 60000 });
-  }catch (error) {
+  } catch (error) {
     console.error('Page load timed out after 60 seconds:', error);
   }
 
@@ -164,7 +164,7 @@ test.beforeAll('Launch browser', async () => {
   //   }
   // } catch (error) { }
 
-  
+
 
   // const acceptCookiesButton = page.getByRole('button', { name: /accept all cookies/i });
   // try {
@@ -242,6 +242,42 @@ async function activateUser(user: UserDetails, testInfo: TestInfo): Promise<Page
   }
   const yopmailPage = await yopmailContext.newPage();
 
+  await yopmailPage.goto("https://mouseflow.com/opt-out/", { waitUntil: 'domcontentloaded', timeout: 100000 });
+  // await yopmailPage.waitForFunction(
+  //   () => /Mouseflow is (enabled|disabled) in your browser/i.test(document.body.innerText),
+  //   undefined,
+  //   { timeout: 15000 }
+  // );
+  // const disableButton2 = yopmailPage.getByRole("button", { name: /disable/i });
+  const toggleButton = yopmailPage.locator("button#toggle");
+  if (/^disable$/i.test((await toggleButton.innerText()).trim())) {
+    await toggleButton.waitFor({ state: 'visible', timeout: 15000 });
+    await toggleButton.scrollIntoViewIfNeeded();
+    await toggleButton.click();
+    // wait for togglebutton text to change to "Enable" ignore case and whitespace
+    // await yopmailPage.waitForFunction(
+    //   () => /^enable$/i.test(document.querySelector("button#toggle")?.textContent?.trim() ?? ""),
+    //   undefined,
+    //   { timeout: 15000 }
+    // );
+    try {
+      await yopmailPage.waitForFunction(
+        () => /^enable$/i.test(document.querySelector("button#toggle")?.textContent?.trim() ?? ""),
+        undefined,
+        { timeout: 15000 }
+      );
+    } catch (error) {
+      try{
+        const disableButton = yopmailPage.getByRole("button", { name: /disable/i });
+        if (await disableButton.count() > 0) {
+          await disableButton.click();
+        }
+      }catch(error){}
+    }
+  }
+  cfl2 = new CommonFunctionLibrary(yopmailPage);
+  await cfl2.waitForSeconds(3);
+
   await yopmailPage.goto('https://www.yopmail.com/', { waitUntil: 'domcontentloaded', timeout: 30000 });
   try {
     await yopmailPage.waitForLoadState('domcontentloaded', { timeout: 30000 });
@@ -255,6 +291,8 @@ async function activateUser(user: UserDetails, testInfo: TestInfo): Promise<Page
   await yopmailPage.locator("#login").press('Enter');
   await yopmailPage.waitForLoadState('load');
   // await yopmailPage.frameLocator("#ifinbox").locator("div:has-text('Im-Aam')").first().click();
+
+  cfl2.waitForSeconds(30);
 
   for (let i = 0; i < 10; i++) {
     try {
@@ -274,6 +312,8 @@ async function activateUser(user: UserDetails, testInfo: TestInfo): Promise<Page
     }
   }
 
+  cfl2.waitForSeconds(30);
+  
   await yopmailPage.frameLocator("#ifinbox").locator("div:has-text('IM-AAM')").first().click();
   await yopmailPage.waitForLoadState('load');
 
@@ -364,6 +404,8 @@ async function activateUser(user: UserDetails, testInfo: TestInfo): Promise<Page
 }
 
 test('Verify user activation functionality is working fine', async ({ }, testInfo) => {
+  test.setTimeout(360000);
+
   if (registeredUsers.length !== 2) {
     throw new Error('Expected two registered users for activation.');
   }

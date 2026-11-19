@@ -22,6 +22,7 @@ let cfl: CommonFunctionLibrary;
 // }
 
 test.beforeAll('Launch browser', async () => {
+  test.setTimeout(360000);
   console.log('Setup: Preparing environment...');
 
   browserSession = await createBrowserSession();
