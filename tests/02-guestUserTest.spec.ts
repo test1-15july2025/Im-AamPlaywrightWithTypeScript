@@ -77,7 +77,9 @@ test('Verify that correct free trial pop-up is there for the guest user', async 
   await expect.soft(page.locator("button[class^='FreeTrialPopUP_btn']").nth(0)).toHaveText('REGISTER');
   await expect.soft(page.locator("button[class^='FreeTrialPopUP_btn']").nth(1)).toHaveText('LOGIN');
 
+  await cfl.waitForSeconds(3);
   await page.locator("div[class*='FreeTrialPopUP_trialModal']").press('Escape');
+  await cfl.waitForSeconds(3);
 
   await expect(page.locator("div[class*='FreeTrialPopUP_trialModal']")).toBeHidden();
 
@@ -92,11 +94,13 @@ test('Verify that correct free trial pop-up is there for the guest user', async 
 
 test("Verify that no table cell contains 'N/A' in position trader table", async ({ }, testInfo) => {
   await cfl.waitForSeconds(5);
-  if(await page.locator("div[class^='porfolioTable_tableContainer'] td").count() === 0){
+  // if(await page.locator("div[class^='porfolioTable_tableContainer'] td").count() === 0){
+  if(await page.locator("div[class='singleTable'] td").count() === 0){
     console.warn('No table cells found in Position Trader table. Skipping N/A check.');
     return;
   }else{
-    const cells = page.locator("div[class^='porfolioTable_tableContainer'] td");
+    await page.locator("div[class='singleTable'] td").first().scrollIntoViewIfNeeded();
+    const cells = page.locator("div[class='singleTable'] td");
     const count = await cells.count();    
     for (let i = 0; i < count; i++) {
       await expect(cells.nth(i)).not.toContainText('N/A', { timeout: 5000 });
@@ -116,14 +120,15 @@ test("Verify that no table cell contains 'N/A' in swing trader table", async ({ 
   await page.waitForLoadState('load', { timeout: 60000 });
   await cfl.waitForSeconds(5);
   
-  if(await page.locator("div[class^='porfolioTable_tableContainer'] td").count() === 0){
+  if(await page.locator("div[class='singleTable'] td").count() === 0){
     console.warn('No table cells found in Swing Trader table. Skipping N/A check.');
     return;
   }else{
-    const cells = page.locator("div[class^='porfolioTable_tableContainer'] td");
+    await page.locator("div[class='singleTable'] td").first().scrollIntoViewIfNeeded();
+    const cells = page.locator("div[class='singleTable'] td");
     const count = await cells.count();
 
-    if(await page.locator("div[class^='porfolioTable_tableContainer'] td").count() > 0){
+    if(await page.locator("div[class='singleTable'] td").count() > 0){
       for (let i = 0; i < count; i++) {
         await expect(cells.nth(i)).not.toContainText('N/A', { timeout: 5000 });
       }
@@ -142,8 +147,9 @@ test("Verify that no table cell contains 'N/A' in daily trader table", async ({ 
   await page.click("a:has-text('Daily Trade Picks')");
   await page.waitForLoadState('load', { timeout: 60000 });
   await cfl.waitForSeconds(5);
-  if(await page.locator("div[class^='porfolioTable_tableContainer'] td").count() > 0){
-    const cells = page.locator("div[class^='porfolioTable_tableContainer'] td");
+  if(await page.locator("div[class='singleTable'] td").count() > 0){
+    await page.locator("div[class='singleTable'] td").first().scrollIntoViewIfNeeded();
+    const cells = page.locator("div[class='singleTable'] td");
     const count = await cells.count();
     
     for (let i = 0; i < count; i++) {

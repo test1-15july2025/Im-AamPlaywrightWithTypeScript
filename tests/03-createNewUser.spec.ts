@@ -1,4 +1,4 @@
-import { test, expect, Browser, BrowserContext, Page, type TestInfo } from '@playwright/test';
+import { test, expect, Browser, BrowserContext, Page, request, type APIRequestContext, type TestInfo } from '@playwright/test';
 import { appendFile, mkdir, writeFile } from 'fs/promises';
 import { resolve } from 'path';
 // import { test, expect, Browser, BrowserContext, Page } from '@playwright/test';
@@ -13,7 +13,8 @@ test.describe.configure({ mode: 'serial' }); // Run tests in this block sequenti
 let browser: Browser;
 let context: BrowserContext;
 let browserSession: BrowserSession;
-let yopmailContext: BrowserContext;
+let emailContext: BrowserContext;
+let catchmailRequest: APIRequestContext | undefined;
 let page: Page;
 let newPageInNewTab: Page;
 let iafl: ImAamFunctionLibrary;
@@ -83,7 +84,7 @@ async function appendUserNameToTextFile(name: string) {
 
 async function registerUser(): Promise<UserDetails> {
   const createdUserID = 'test' + cfl.getTimestampManual() + Math.floor(Math.random() * 10);
-  const createdEmailAddress = createdUserID + '@yopmail.com';
+  const createdEmailAddress = createdUserID + '@catchmail.io';
   const createdPassword = 'Test@123';
   const phoneNumber = '9' + Math.floor(100000000 + Math.random() * 900000000).toString();
 
@@ -138,6 +139,7 @@ test.beforeAll('Launch browser', async () => {
   console.log('Setup: Preparing environment...');
 
   browserSession = await createBrowserSession();
+  catchmailRequest = await request.newContext();
   browser = browserSession.browser;
   context = browserSession.context;
   page = browserSession.page;
@@ -183,7 +185,13 @@ test.afterEach(async ({ }, testInfo) => {
 
 test.afterAll(async () => {
   console.log('Teardown: Cleaning up environment...');
-  await closeBrowserSession(browserSession);
+  try {
+    if (catchmailRequest) {
+      await catchmailRequest.dispose();
+    }
+  } finally {
+    await closeBrowserSession(browserSession);
+  }
 });
 
 test('has title', async () => {
@@ -232,98 +240,143 @@ test('Verify add user functionality is working fine', async ({ }, testInfo) => {
 
 });
 
+type CatchmailMessage = {
+  id: string;
+  subject: string;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+async function getCatchmailActivationLink(emailAddress: string, emailPage: Page): Promise<string> {
+  const apiRequest = catchmailRequest;
+  if (!apiRequest) {
+    throw new Error('Catchmail API client was not initialized.');
+  }
+
+  const apiBaseUrl = 'https://api.catchmail.io/api/v1';
+  const deadline = Date.now() + 120000;
+  let activationMessage: CatchmailMessage | undefined;
+
+  while (Date.now() < deadline) {
+    const response = await apiRequest.get(`${apiBaseUrl}/mailbox`, {
+      params: { address: emailAddress },
+    });
+    if (!response.ok()) {
+      throw new Error(`Catchmail mailbox request failed with status ${response.status()}.`);
+    }
+
+    const payload: unknown = await response.json();
+    if (!isRecord(payload) || !Array.isArray(payload.messages)) {
+      throw new Error('Catchmail returned an invalid mailbox response.');
+    }
+
+    const messages: CatchmailMessage[] = payload.messages.map((message: unknown) => {
+      if (!isRecord(message) || typeof message.id !== 'string' || typeof message.subject !== 'string') {
+        throw new Error('Catchmail returned a message with an invalid shape.');
+      }
+      return { id: message.id, subject: message.subject };
+    });
+
+    activationMessage = messages.find(message => /im-aam|activate|verif/i.test(message.subject));
+    if (activationMessage) {
+      break;
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 1100));
+  }
+
+  if (!activationMessage) {
+    throw new Error(`No activation email arrived in Catchmail for ${emailAddress} within 120 seconds.`);
+  }
+
+  await new Promise(resolve => setTimeout(resolve, 1100));
+  const messageResponse = await apiRequest.get(
+    `${apiBaseUrl}/message/${encodeURIComponent(activationMessage.id)}`,
+    { params: { mailbox: emailAddress } },
+  );
+  if (!messageResponse.ok()) {
+    throw new Error(`Catchmail message request failed with status ${messageResponse.status()}.`);
+  }
+
+  const messagePayload: unknown = await messageResponse.json();
+  if (!isRecord(messagePayload) || !isRecord(messagePayload.body) || typeof messagePayload.body.html !== 'string') {
+    throw new Error('Catchmail returned an activation email without HTML content.');
+  }
+
+  await emailPage.setContent(messagePayload.body.html, { waitUntil: 'domcontentloaded' });
+  const activationLink = emailPage.locator('a').filter({ hasText: /activate account/i }).first();
+  const href = await activationLink.getAttribute('href');
+  if (!href) {
+    throw new Error('The Catchmail activation email does not contain an Activate Account link.');
+  }
+
+  let activationUrl: URL;
+  try {
+    activationUrl = new URL(href);
+  } catch {
+    throw new Error('The Catchmail activation link is not an absolute URL.');
+  }
+  if (activationUrl.protocol !== 'http:' && activationUrl.protocol !== 'https:') {
+    throw new Error('The Catchmail activation link does not use HTTP or HTTPS.');
+  }
+  if (activationUrl.host !== new URL(iafl.envUrl).host) {
+    throw new Error('The Catchmail activation link does not match the configured application host.');
+  }
+
+  return activationUrl.toString();
+}
+
 async function activateUser(user: UserDetails, testInfo: TestInfo): Promise<Page> {
   userID = user.userID;
   emailAddress = user.emailAddress;
   password = user.password;
 
-  if (!yopmailContext) {
-    yopmailContext = await createAuthenticatedContext(browserSession);
+  if (!emailContext) {
+    emailContext = await createAuthenticatedContext(browserSession);
   }
-  const yopmailPage = await yopmailContext.newPage();
+  const emailPage = await emailContext.newPage();
 
-  await yopmailPage.goto("https://mouseflow.com/opt-out/", { waitUntil: 'domcontentloaded', timeout: 100000 });
-  // await yopmailPage.waitForFunction(
+  await emailPage.goto("https://mouseflow.com/opt-out/", { waitUntil: 'domcontentloaded', timeout: 100000 });
+  // await emailPage.waitForFunction(
   //   () => /Mouseflow is (enabled|disabled) in your browser/i.test(document.body.innerText),
   //   undefined,
   //   { timeout: 15000 }
   // );
-  // const disableButton2 = yopmailPage.getByRole("button", { name: /disable/i });
-  const toggleButton = yopmailPage.locator("button#toggle");
+  // const disableButton2 = emailPage.getByRole("button", { name: /disable/i });
+  const toggleButton = emailPage.locator("button#toggle");
   if (/^disable$/i.test((await toggleButton.innerText()).trim())) {
     await toggleButton.waitFor({ state: 'visible', timeout: 15000 });
     await toggleButton.scrollIntoViewIfNeeded();
     await toggleButton.click();
     // wait for togglebutton text to change to "Enable" ignore case and whitespace
-    // await yopmailPage.waitForFunction(
+    // await emailPage.waitForFunction(
     //   () => /^enable$/i.test(document.querySelector("button#toggle")?.textContent?.trim() ?? ""),
     //   undefined,
     //   { timeout: 15000 }
     // );
     try {
-      await yopmailPage.waitForFunction(
+      await emailPage.waitForFunction(
         () => /^enable$/i.test(document.querySelector("button#toggle")?.textContent?.trim() ?? ""),
         undefined,
         { timeout: 15000 }
       );
     } catch (error) {
       try{
-        const disableButton = yopmailPage.getByRole("button", { name: /disable/i });
+        const disableButton = emailPage.getByRole("button", { name: /disable/i });
         if (await disableButton.count() > 0) {
           await disableButton.click();
         }
       }catch(error){}
     }
   }
-  cfl2 = new CommonFunctionLibrary(yopmailPage);
+  cfl2 = new CommonFunctionLibrary(emailPage);
   await cfl2.waitForSeconds(3);
 
-  await yopmailPage.goto('https://www.yopmail.com/', { waitUntil: 'domcontentloaded', timeout: 30000 });
-  try {
-    await yopmailPage.waitForLoadState('domcontentloaded', { timeout: 30000 });
-  } catch (error) {
-    console.warn('Yopmail DOMContentLoaded wait timed out; continuing with the inbox check.', error);
-  }
-  await yopmailPage.locator('#login').waitFor({ state: 'visible', timeout: 30000 });
-
-  await yopmailPage.locator("#login").clear();
-  await yopmailPage.locator("#login").fill(emailAddress);
-  await yopmailPage.locator("#login").press('Enter');
-  await yopmailPage.waitForLoadState('load');
-  // await yopmailPage.frameLocator("#ifinbox").locator("div:has-text('Im-Aam')").first().click();
-
-  cfl2.waitForSeconds(30);
-
-  for (let i = 0; i < 10; i++) {
-    try {
-      if (await yopmailPage.locator("//div[contains(text(),'This inbox is empty')]").count() > 0) {
-        console.log('Inbox is empty, need to refresh... Attempt #' + (i + 1));
-        await yopmailPage.locator("#refresh").click();
-        await yopmailPage.waitForLoadState('load');
-        await yopmailPage.waitForTimeout(2000);
-      } else {
-        break;
-      }
-    } catch (error) {
-      console.error('There is exception while checking inbox status:', error);
-      yopmailPage.reload();
-      await yopmailPage.waitForLoadState('load');
-      await yopmailPage.waitForTimeout(2000);
-    }
-  }
-
-  cfl2.waitForSeconds(30);
-  
-  await yopmailPage.frameLocator("#ifinbox").locator("div:has-text('IM-AAM')").first().click();
-  await yopmailPage.waitForLoadState('load');
-
-  await yopmailPage.frameLocator("iframe[name='ifinbox']").locator(".lm").click();
-
-  [newPageInNewTab] = await Promise.all([
-    yopmailPage.waitForEvent('popup'),
-    yopmailPage.frameLocator("iframe[name='ifmail']").getByText("Activate Account").click(),
-
-  ]);
+  const activationUrl = await getCatchmailActivationLink(emailAddress, emailPage);
+  newPageInNewTab = emailPage;
+  await newPageInNewTab.goto(activationUrl, { waitUntil: 'domcontentloaded' });
 
   iafl2 = new ImAamFunctionLibrary(newPageInNewTab);
 
