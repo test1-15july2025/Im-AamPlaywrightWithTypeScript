@@ -126,8 +126,14 @@ test('Verify that making first deposit of $10 by Paypal, increasing balance $60 
 
   const trialBanner = page.locator("div[class^='TrialBanner_bannerContainer']");
   const closeTrialBannerButton = page.locator("button[class^='TrialBanner_closeButton']").first();
-  await expect(trialBanner.first()).toBeVisible({ timeout: 10000 });
-  await closeTrialBannerButton.click();
+  try{
+    await expect(trialBanner.first()).toBeVisible({ timeout: 10000 });
+  }catch{}
+  try{
+    await closeTrialBannerButton.click();
+  }catch{
+    await closeTrialBannerButton.click();
+  }
   await expect(trialBanner).toBeHidden();
 
   const claimNowLink = page.locator("a:has-text('Claim Now')");

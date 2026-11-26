@@ -116,7 +116,15 @@ test("Verify that no table cell contains 'N/A' in position trader table", async 
 
 test("Verify that no table cell contains 'N/A' in swing trader table", async ({ }, testInfo) => {
   // await page.click("a:has-text('Swing Trader')");
-  await page.click("a:has-text('Swing Trade Picks')");
+
+  // if (!(await page.locator("a:has-text('Swing Trade Picks')").isVisible())) {
+  //   await page.locator("button[aria-label='Expand sidebar']").click();
+  // }
+
+  page.locator("div[class^='nav_subList']").locator("a:has-text('Swing Trade Picks')").click;
+
+  // await page.locator("a:has-text('Swing Trade Picks')");
+  // await page.click("a:has-text('Swing Trade Picks')");
   await page.waitForLoadState('load', { timeout: 60000 });
   await cfl.waitForSeconds(5);
   

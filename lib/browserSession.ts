@@ -19,7 +19,7 @@ export async function createBrowserSession(): Promise<BrowserSession> {
       ? webkit
       : chromium;
   const browser = await browserType.launch({
-    headless: true,
+    headless: false,
     args: ['--start-maximized', '--disable-blink-features=AutomationControlled'],
     ignoreDefaultArgs: ['--enable-automation'],
     timeout: 120000,
